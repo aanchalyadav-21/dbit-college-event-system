@@ -1,0 +1,7 @@
+package com.dbit.eventsystem.exception;
+
+public class DuplicateResourceException extends RuntimeException {
+    public DuplicateResourceException(String message) {
+        super(message);
+    }
+}

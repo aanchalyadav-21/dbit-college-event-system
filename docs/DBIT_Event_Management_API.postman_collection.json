@@ -1,0 +1,213 @@
+{
+  "info": {
+    "name": "DBIT College Event Management System APIs",
+    "description": "Comprehensive Postman collection for testing REST endpoints of DBIT College Event Management System.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary Metrics",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/dashboard/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/events"
+          }
+        },
+        {
+          "name": "Filter Events by Category",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/events?category=Technical"
+          }
+        },
+        {
+          "name": "Search Events by Title",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/events?search=Hackathon"
+          }
+        },
+        {
+          "name": "Get Event By ID",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/events/1"
+          }
+        },
+        {
+          "name": "Create New Event",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8080/api/events",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"AI & Robotics Exhibition\",\n  \"description\": \"Showcase of student-built IoT robotics and autonomous agents.\",\n  \"category\": \"Technical\",\n  \"date\": \"2026-11-22\",\n  \"time\": \"10:00:00\",\n  \"budget\": 35000.00,\n  \"organizerId\": 1,\n  \"venueId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:8080/api/events/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"Hackathon DBIT 2026 - Revised\",\n  \"description\": \"Updated 24-hour hackathon rules.\",\n  \"category\": \"Technical\",\n  \"date\": \"2026-11-16\",\n  \"time\": \"09:00:00\",\n  \"budget\": 50000.00,\n  \"organizerId\": 3,\n  \"venueId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Event (Safe Delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:8080/api/events/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizers",
+      "item": [
+        {
+          "name": "Get All Organizers",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/organizers"
+          }
+        },
+        {
+          "name": "Create Organizer",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8080/api/organizers",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ACM Student Chapter\",\n  \"email\": \"acm@dbit.ac.in\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Venues",
+      "item": [
+        {
+          "name": "Get All Venues",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/venues"
+          }
+        },
+        {
+          "name": "Create Venue",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8080/api/venues",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Open Air Amphitheatre\",\n  \"capacity\": 400,\n  \"area\": \"Campus Central Courtyard\",\n  \"city\": \"Mumbai\",\n  \"landmark\": \"Near College Canteen\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registrations",
+      "item": [
+        {
+          "name": "Register Student for Event",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8080/api/registrations",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": 1,\n  \"firstName\": \"Nikhil\",\n  \"lastName\": \"Verma\",\n  \"dob\": \"2005-01-15\",\n  \"email\": \"nikhil.verma@student.dbit.ac.in\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Attempt Duplicate Registration (Expects 409 Conflict)",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8080/api/registrations",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": 1,\n  \"firstName\": \"Aarav\",\n  \"lastName\": \"Mehta\",\n  \"dob\": \"2005-04-12\",\n  \"email\": \"aarav.mehta@student.dbit.ac.in\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Registrations",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/registrations"
+          }
+        },
+        {
+          "name": "Get Registrations for Specific Event",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/api/registrations/event/1"
+          }
+        },
+        {
+          "name": "Cancel Registration",
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:8080/api/registrations/1"
+          }
+        }
+      ]
+    }
+  ]
+}
