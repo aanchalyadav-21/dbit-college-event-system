@@ -19,6 +19,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * EventService - Handles all business logic for college events.
+ * Demonstrates:
+ * 1. Filtering events by keyword search and category.
+ * 2. Safe event creation and updates with foreign key resolution.
+ * 3. Safe deletion check (blocks delete if students are registered).
+ */
 @Service
 @Transactional
 public class EventService {
@@ -38,6 +45,9 @@ public class EventService {
         this.registrationRepository = registrationRepository;
     }
 
+    /**
+     * Retrieves all events, with optional keyword search and category filter.
+     */
     @Transactional(readOnly = true)
     public List<EventResponseDTO> getAllEvents(String search, String category) {
         List<Event> events;
@@ -57,26 +67,35 @@ public class EventService {
         return events.stream().map(this::mapToResponseDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Looks up an Event entity by its primary key ID.
+     */
     @Transactional(readOnly = true)
     public Event getEventEntityById(Long id) {
         return eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + id));
     }
 
+    /**
+     * Retrieves an event response DTO with calculated registration count.
+     */
     @Transactional(readOnly = true)
     public EventResponseDTO getEventById(Long id) {
         Event event = getEventEntityById(id);
         return mapToResponseDTO(event);
     }
 
+    /**
+     * Creates a new event after verifying foreign keys for Organizer and Venue.
+     */
     public EventResponseDTO createEvent(EventRequestDTO dto) {
         validateEventRequest(dto);
 
         Organizer organizer = organizerRepository.findById(dto.getOrganizerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Selected organizer not found with ID: " + dto.getOrganizerId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Organizer not found with ID: " + dto.getOrganizerId()));
 
         Venue venue = venueRepository.findById(dto.getVenueId())
-                .orElseThrow(() -> new ResourceNotFoundException("Selected venue not found with ID: " + dto.getVenueId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Venue not found with ID: " + dto.getVenueId()));
 
         Event event = new Event();
         event.setEventName(dto.getEventName().trim());
@@ -92,16 +111,19 @@ public class EventService {
         return mapToResponseDTO(saved);
     }
 
+    /**
+     * Updates an existing event details.
+     */
     public EventResponseDTO updateEvent(Long id, EventRequestDTO dto) {
         validateEventRequest(dto);
 
         Event existing = getEventEntityById(id);
 
         Organizer organizer = organizerRepository.findById(dto.getOrganizerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Selected organizer not found with ID: " + dto.getOrganizerId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Organizer not found with ID: " + dto.getOrganizerId()));
 
         Venue venue = venueRepository.findById(dto.getVenueId())
-                .orElseThrow(() -> new ResourceNotFoundException("Selected venue not found with ID: " + dto.getVenueId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Venue not found with ID: " + dto.getVenueId()));
 
         existing.setEventName(dto.getEventName().trim());
         existing.setDescription(dto.getDescription().trim());
@@ -116,6 +138,10 @@ public class EventService {
         return mapToResponseDTO(updated);
     }
 
+    /**
+     * Safe delete: checks if any student registrations exist.
+     * Prevents orphan records and displays a clean error message.
+     */
     public void deleteEvent(Long id) {
         Event event = getEventEntityById(id);
         long regCount = registrationRepository.countByEvent_EventId(id);
@@ -126,12 +152,19 @@ public class EventService {
         eventRepository.delete(event);
     }
 
+    /**
+     * Validates business rules for event budget.
+     */
     private void validateEventRequest(EventRequestDTO dto) {
         if (dto.getBudget() != null && dto.getBudget().compareTo(BigDecimal.ZERO) < 0) {
             throw new BadRequestException("Event budget cannot be negative.");
         }
     }
 
+    /**
+     * Helper method to map Event entity into EventResponseDTO.
+     * Calculates registration count and upcoming status.
+     */
     public EventResponseDTO mapToResponseDTO(Event event) {
         EventResponseDTO dto = new EventResponseDTO();
         dto.setEventId(event.getEventId());

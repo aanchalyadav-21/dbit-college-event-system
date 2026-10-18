@@ -16,6 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * RegistrationService - Handles all business logic for student registrations.
+ * Demonstrates:
+ * 1. Venue capacity verification before accepting registration.
+ * 2. Duplicate registration prevention (application-level guard).
+ * 3. Safe cancellation of registrations.
+ */
 @Service
 @Transactional
 public class RegistrationService {
@@ -32,20 +39,26 @@ public class RegistrationService {
         this.participantService = participantService;
     }
 
+    /**
+     * Registers a student for a specific event.
+     * Enforces capacity limits and prevents duplicate registrations.
+     */
     public RegistrationResponseDTO registerStudent(RegistrationRequestDTO dto) {
+        // Step 1: Verify the event exists in the database
         Event event = eventRepository.findById(dto.getEventId())
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + dto.getEventId()));
 
-        // Check venue capacity
+        // Step 2: Check venue seating capacity limit
         if (event.getVenue() != null && event.getVenue().getCapacity() != null) {
             long currentCount = registrationRepository.countByEvent_EventId(event.getEventId());
             if (currentCount >= event.getVenue().getCapacity()) {
                 throw new BadRequestException("Registration closed: Venue '" +
-                        event.getVenue().getName() + "' has reached maximum capacity of " + event.getVenue().getCapacity() + " attendees.");
+                        event.getVenue().getName() + "' has reached its maximum capacity of " +
+                        event.getVenue().getCapacity() + " attendees.");
             }
         }
 
-        // Find existing participant by email or register them
+        // Step 3: Find existing participant by email or register them as a new participant
         Participant participant = participantService.findOrCreateParticipant(
                 dto.getFirstName().trim(),
                 dto.getLastName().trim(),
@@ -53,12 +66,20 @@ public class RegistrationService {
                 dto.getEmail().trim().toLowerCase()
         );
 
-        // Enforce duplicate registration prevention at application layer
-        if (registrationRepository.existsByParticipant_ParticipantIdAndEvent_EventId(participant.getParticipantId(), event.getEventId())) {
-            throw new DuplicateResourceException("Participant '" + participant.getFirstName() + " " + participant.getLastName() +
-                    "' (" + participant.getEmail() + ") is already registered for '" + event.getEventName() + "'.");
+        // Step 4: Enforce duplicate registration prevention at application layer
+        // (Also permanently backed up by MySQL's UNIQUE(Participant_ID, Event_ID) constraint)
+        boolean alreadyRegistered = registrationRepository.existsByParticipant_ParticipantIdAndEvent_EventId(
+                participant.getParticipantId(),
+                event.getEventId()
+        );
+
+        if (alreadyRegistered) {
+            throw new DuplicateResourceException("Participant '" + participant.getFirstName() + " " +
+                    participant.getLastName() + "' (" + participant.getEmail() + ") is already registered for '" +
+                    event.getEventName() + "'.");
         }
 
+        // Step 5: Save new registration record to MySQL
         Registration registration = new Registration();
         registration.setParticipant(participant);
         registration.setEvent(event);
@@ -67,6 +88,9 @@ public class RegistrationService {
         return mapToDTO(saved);
     }
 
+    /**
+     * Retrieves all registrations with student and event details.
+     */
     @Transactional(readOnly = true)
     public List<RegistrationResponseDTO> getAllRegistrations() {
         return registrationRepository.findAll().stream()
@@ -74,6 +98,9 @@ public class RegistrationService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves all registrations for a specific event.
+     */
     @Transactional(readOnly = true)
     public List<RegistrationResponseDTO> getRegistrationsByEvent(Long eventId) {
         if (!eventRepository.existsById(eventId)) {
@@ -84,12 +111,19 @@ public class RegistrationService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Safely cancels a student registration by registration ID.
+     */
     public void cancelRegistration(Long id) {
         Registration reg = registrationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found with ID: " + id));
         registrationRepository.delete(reg);
     }
 
+    /**
+     * Helper method to map Registration entity into RegistrationResponseDTO.
+     * Prevents circular JSON reference issues.
+     */
     private RegistrationResponseDTO mapToDTO(Registration reg) {
         RegistrationResponseDTO dto = new RegistrationResponseDTO();
         dto.setRegistrationId(reg.getRegistrationId());
